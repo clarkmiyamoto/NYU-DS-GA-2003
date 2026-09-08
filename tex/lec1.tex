@@ -1,0 +1,106 @@
+\section{What makes data science scientific?}
+So before thinking about data science, we should first ask what do different disciplines offer...
+\begin{itemize}
+	\item \emph{Machine learning}: Consider a hypothesis class $\mathcal H$, your neural network is a point $f_\theta \in \mathcal H$. You find a suitable choice $\hat f$ via Empirical Risk Minimization $\hat f = \arg \min_{f}\frac{1}{N} \sum_{i=1}^N \| y - f(x_i)\|^2$; so the chosen network will depend on the data, hypothesis class, and optimizer.
+	\item \emph{Statistics}: Construct a likelihood (data generating process), and then (if you're a frequentist) maximize the likelihood (and if you're a bayesian) sample the posterior. Attempt to quantify the uncertainty of your estimator.
+	\item \emph{Data Science}: How can we use the constructed model 
+\end{itemize}
+
+\paragraph{Example: Maximum Likelihood \& Linear Regression}
+Let $\mathcal D = \left\{ (x_i, y_i) \right\}_{i=1}^N$ denote your dataset. Consider the hypothesis class
+\begin{align}
+	f_\theta(x) = \langle x , \theta\rangle
+\end{align}
+Assuming the data generating process is
+\begin{align}
+	Y_i = f_\theta(X_i) + \epsilon, \quad \epsilon \sim \mathcal N(0, \sigma^2)
+\end{align}
+This implies $\log p(y| X, \theta, \sigma^2) = C - \frac{1}{2} \sum_{i=1}^N(y_i - \langle x_i, \theta\rangle)^2$. Then maximizing the likelihood is equivalent to minimizing the MSE loss
+\begin{align}
+	\mathcal L(\theta) = \mathbb E_{\mathcal D} \| Y - f_\theta(X)\|^2
+\end{align}
+This gives us the common $L_2$ loss that we know in machine learning.
+
+\paragraph{Example: Maximum Aposteriori \& Linear Regression}
+Consider the Bayesian inference $p(\theta | \mathcal D) \propto p(y| X, \theta) p(\theta)$, where $p(y|X, \theta)$ is the likelihood from the previous example \& $p(\theta)$ is the prior. Here we'll assume $p(\theta) = \mathcal N(0, \tau^2 \mathbb I)$. Then maximizing the posterior $\log p(\theta | \mathcal D)$ is equivalent to minimizing the $L_2$ + Ridge loss.
+\begin{align}
+	\hat \theta_{MAP} = \arg \min_\theta \frac{1}{2 \sigma^2}\sum_i (y_i - \langle x_i, \theta\rangle)^2 + \lambda \| \theta\|_2^2, \quad \lambda = 1/\tau^2
+\end{align}
+
+\paragraph{Example: Bernoulli Likelihood \& Cross Entropy}
+Consider the data generating process
+\begin{align}
+	Y | X=x \sim \textsf{Bernoulli}(p(x)) 
+\end{align}
+where $p(x) = \sigma(x^T \theta)$, and $\sigma = \textsf{Softmax}_1 = \tanh$. You can think $x^T \theta$ is the model class, and $\sigma$ is a heuristic choice to convert it to a probability to type-check correctly for the \textsf{Bernoulli}. Then the likelihood becomes
+\begin{align}
+	- \log p(y | x, \theta) = - y \log p - (1-y) \log (1-y)
+\end{align}
+
+\paragraph{Example: Categorical Likelihood \& Multiclass Cross Entropy}
+Consider a $K$-class logit $z_k(x) = w_k^T x$, then softmax it
+\begin{align}
+	p_k(x) = \textsf{Softmax}_k(\{z_i\}_{i=1}^K) = \frac{\exp(z_k) }{\sum_{j=1}^K \exp(z_j)}
+\end{align}
+
+\subsection{Verification of Model}
+In the case of linear regression, there are many ways to check your model. E.g. you have assumed it's a linear model but if you get poor fit, perhaps it's a non-linear model; do you have heteroskedacticity (errors $\sigma_i$ are different between $x_i$'s); do the tails match, then perhaps you need to use a different loss.
+
+\subsection{Generaliztion of Model}
+Once you train / fit your model, how do we know if it'll work for other people?
+
+\paragraph{Case Study: Pneumonia model at New Hospital}
+This is a real published study from Zech et al. (2018) (\url{https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1002683}). In particular, the home hopsital of the researchers, the model achieved $\textsf{AUROC} \sim 0.9$ but at other hospitals got $\textsf{AUROC} \sim 0.8$. What happened?
+
+\begin{itemize}
+	\item \emph{Spurious feature}: There was a class imbalance between hospitals
+	\begin{table}[h]
+	\centering
+	\begin{tabular}{lcc}
+	\hline
+	 & Positive & Negative \\
+	\hline
+	Hopsital A & 90 & 10 \\
+	Hospital B & 10 & 90 \\
+	\hline
+	\end{tabular}
+	\end{table}
+	\\
+	So the model can find a trivial solution $A \implies \text{Positive}$ and $B \implies \text{Negative}$; which obvioiusly is not intended. This phenomena is related to a security issue called \emph{backdoor attack}; this is people uploading purposefully bad data to induce spurious features.
+	
+	\item \emph{Distributional Shift}: Perhaps the demographic shifted between Hospitals (e.g. more elders at Hospital A vs more youth at Hospital B).
+\end{itemize}
+An elegant solution is to construct a method which finds these features \& orthogonalizes them. So $z = [\text{Hospital Type}, \text{Demographics}, ...] \in \mathbb R^{m \times n}$ and find a mapping  $\langle f(\text{Hosptial Type}), g(\text{Demographics}) \rangle = 0$; when you make predictions give $z_{2}$ higher weight. Obviously, easier said than done. In general, there isn't a magic bullet which will do this for you. You'll need to iteratively play around with the methods to find a good solution.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
